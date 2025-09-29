@@ -11,4 +11,5 @@ public class TicketStatusHistory : IBaseEntity
     public Guid NewStatusId { get; set; }
     public Guid TicketId { get; set; }
     public Guid ChangedById { get; set; }
+    public virtual Ticket Ticket { get; set; } = null!;
 }

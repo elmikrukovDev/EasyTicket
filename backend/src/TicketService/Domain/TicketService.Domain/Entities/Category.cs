@@ -7,4 +7,5 @@ public class Category : IBaseEntity
     public string Name { get; set; } = null!;
     public string Description { get; set; } = null!;
     public bool IsActive { get; set; }
+    public virtual ICollection<Ticket> Tickets { get; set; } = [];
 }
