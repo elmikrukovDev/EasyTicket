@@ -8,9 +8,10 @@ public class User : IdentityUser<Guid>
 
     public bool IsActive { get; set; }
 
-    public DateTime LastLoginAt { get; set; }
+    public DateTime LoginAt { get; set; }
 
     public Guid RoleId { get; set; }
 
     public virtual Role Role { get; set; } = null!;
+    public string[] Groups { get; set; }
 }
