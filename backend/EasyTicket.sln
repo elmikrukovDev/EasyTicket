@@ -47,8 +47,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuthService.Domain.Interfac
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuthService.Infrastructure", "src\AuthService\Infrastructure\AuthService.Infrastructure\AuthService.Infrastructure.csproj", "{11D659A9-ED23-F3DE-89F3-785F7F851810}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuthService.Infrastructure.EntityFramework", "src\AuthService\Infrastructure\AuthService.Infrastructure.EntityFramework\AuthService.Infrastructure.EntityFramework.csproj", "{B104B5AC-6166-8C6A-811A-0E184A85E5C0}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuthService.Infrastructure.Repositories", "src\AuthService\Infrastructure\AuthService.Infrastructure.Repositories\AuthService.Infrastructure.Repositories.csproj", "{E1B50690-6C87-C607-05E6-0533203D168E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TicketService.Presentation.API", "src\TicketService\Presentation\TicketService.Presentation.API\TicketService.Presentation.API.csproj", "{906B9690-6B35-43BC-9352-A5D1C40CCC89}"
@@ -64,6 +62,11 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TicketService.Infrastructure.EntityFramework", "src\TicketService\Infrastructure\TicketService.Infrastructure.EntityFramework\TicketService.Infrastructure.EntityFramework.csproj", "{CC11B694-AC1E-A479-169A-DBE97EBCADD7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TicketService.Infrastructure.Repositories", "src\TicketService\Infrastructure\TicketService.Infrastructure.Repositories\TicketService.Infrastructure.Repositories.csproj", "{0132AD19-F810-5A71-A70B-F5AB46B92756}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Элементы решения", "Элементы решения", "{754FC069-D67B-A9D7-50A1-8D1CA196D8F1}"
+	ProjectSection(SolutionItems) = preProject
+		docker-compose.yml = docker-compose.yml
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -91,10 +94,6 @@ Global
 		{11D659A9-ED23-F3DE-89F3-785F7F851810}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{11D659A9-ED23-F3DE-89F3-785F7F851810}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{11D659A9-ED23-F3DE-89F3-785F7F851810}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B104B5AC-6166-8C6A-811A-0E184A85E5C0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B104B5AC-6166-8C6A-811A-0E184A85E5C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B104B5AC-6166-8C6A-811A-0E184A85E5C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B104B5AC-6166-8C6A-811A-0E184A85E5C0}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E1B50690-6C87-C607-05E6-0533203D168E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E1B50690-6C87-C607-05E6-0533203D168E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E1B50690-6C87-C607-05E6-0533203D168E}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -152,7 +151,6 @@ Global
 		{AC2A3AA9-0FBB-0B70-56B3-72431E45D15E} = {22A3EDCE-1A77-4F93-A795-909724321801}
 		{CD212343-2630-0F14-359C-C284E66938C6} = {22A3EDCE-1A77-4F93-A795-909724321801}
 		{11D659A9-ED23-F3DE-89F3-785F7F851810} = {EC391143-C6A3-4EFB-9411-78986E381B88}
-		{B104B5AC-6166-8C6A-811A-0E184A85E5C0} = {EC391143-C6A3-4EFB-9411-78986E381B88}
 		{E1B50690-6C87-C607-05E6-0533203D168E} = {EC391143-C6A3-4EFB-9411-78986E381B88}
 		{906B9690-6B35-43BC-9352-A5D1C40CCC89} = {9311FD68-250B-46F1-94AD-6F4641F0D645}
 		{18A5092C-C56E-2541-81FC-7A622E8FD675} = {654E0660-8494-4389-BC21-A8E3722298B0}
