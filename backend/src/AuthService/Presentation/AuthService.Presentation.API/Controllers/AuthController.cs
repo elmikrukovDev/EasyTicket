@@ -13,15 +13,18 @@ public class AuthController : ControllerBase
     private readonly ILdapService _ldapService;
     private readonly IUserCacheService _userCache;
     private readonly IJwtService _jwtService;
+    private readonly ILogger<AuthController> _logger;
 
     public AuthController(
         ILdapService ldapService,
         IUserCacheService userCache,
-        IJwtService jwtService)
+        IJwtService jwtService,
+        ILogger<AuthController> logger)
     {
         _ldapService = ldapService;
         _userCache = userCache;
         _jwtService = jwtService;
+        _logger = logger;
     }
 
     /// <summary>
@@ -39,9 +42,7 @@ public class AuthController : ControllerBase
 
             if (!isAuth) return Unauthorized("Auth failed");
 
-            User? user = await _userCache.GetUserAsync(request);
-
-            if (user == null) return Unauthorized("invalid auth");
+            User user = await _userCache.GetUserAsync(request);
 
             var token = _jwtService.GenerateToken(user);
 
@@ -55,8 +56,8 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
-
-            throw;
+            _logger.LogError(ex, ex.Message);
+            return Unauthorized($"Auth failed: {ex.Message}");
         }
     }
 }

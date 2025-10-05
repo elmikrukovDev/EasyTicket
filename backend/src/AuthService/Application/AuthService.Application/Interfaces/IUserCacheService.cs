@@ -5,5 +5,5 @@ namespace AuthService.Application.Interfaces;
 
 public interface IUserCacheService
 {
-    Task<User?> GetUserAsync(LoginRequest request);
+    Task<User> GetUserAsync(LoginRequest request);
 }

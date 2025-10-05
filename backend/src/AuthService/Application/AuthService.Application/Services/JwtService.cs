@@ -29,18 +29,14 @@ public class JwtService : IJwtService
             new Claim(ClaimTypes.Name, user.UserName),
             new Claim(ClaimTypes.Email, user.Email ?? ""),
             new Claim(ClaimTypes.GivenName, user.DisplayName ?? ""),
+            new Claim(ClaimTypes.Role, user.Role),
             new Claim("login_time", user.LoginAt.ToString("O")),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
-        var groupClaims = user.Groups.Select(group =>
-            new Claim(ClaimTypes.Role, group)).ToArray();
-
-        var allClaims = claims.Concat(groupClaims).ToArray();
-
         var tokenDescriptor = new SecurityTokenDescriptor
         {
-            Subject = new ClaimsIdentity(allClaims),
+            Subject = new ClaimsIdentity(claims),
             Expires = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationMinutes),
             Issuer = _jwtSettings.Issuer,
             Audience = _jwtSettings.Audience,
@@ -55,26 +51,19 @@ public class JwtService : IJwtService
 
     public ClaimsPrincipal ValidateToken(string token)
     {
-        try
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var validationParameters = new TokenValidationParameters
         {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var validationParameters = new TokenValidationParameters
-            {
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(_secretKey),
-                ValidateIssuer = true,
-                ValidIssuer = _jwtSettings.Issuer,
-                ValidateAudience = true,
-                ValidAudience = _jwtSettings.Audience,
-                ValidateLifetime = true,
-                ClockSkew = TimeSpan.Zero
-            };
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(_secretKey),
+            ValidateIssuer = true,
+            ValidIssuer = _jwtSettings.Issuer,
+            ValidateAudience = true,
+            ValidAudience = _jwtSettings.Audience,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero
+        };
 
-            return tokenHandler.ValidateToken(token, validationParameters, out _);
-        }
-        catch
-        {
-            return null;
-        }
+        return tokenHandler.ValidateToken(token, validationParameters, out _);
     }
 }

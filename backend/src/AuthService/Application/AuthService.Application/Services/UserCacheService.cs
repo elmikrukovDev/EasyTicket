@@ -24,28 +24,27 @@ public class UserCacheService : IUserCacheService
         _defaultExpiration = TimeSpan.FromMinutes(settings.Value.DefaultExpiration);
     }
 
-    public async Task<User?> GetUserAsync(LoginRequest request)
+    public async Task<User> GetUserAsync(LoginRequest request)
     {
-        var cacheKey = $"user:{request.UserName.ToLower()}";
+        var cacheKey = GetUserCacheKey(request.UserName);
 
-        var cachedUser = await _cache.GetStringAsync(cacheKey);
-        if (!string.IsNullOrEmpty(cachedUser))
+        var cachedUserString = await _cache.GetStringAsync(cacheKey);
+        if (!string.IsNullOrEmpty(cachedUserString))
         {
-            return JsonSerializer.Deserialize<User>(cachedUser);
+            User? cachedUser = JsonSerializer.Deserialize<User>(cachedUserString);
+            if (cachedUser != null) 
+                return cachedUser;
+            await RemoveUserAsync(request.UserName);
         }
 
-        var user = await _ldapService.GetUserAsync(request);
-        if (user != null)
-        {
-            await SetUserAsync(user);
-        }
-
+        User user = await _ldapService.GetUserAsync(request);
+        await SetUserAsync(user);
         return user;
     }
 
     public async Task SetUserAsync(User user, TimeSpan? expiry = null)
     {
-        var cacheKey = $"user:{user.UserName?.ToLower()}";
+        var cacheKey = GetUserCacheKey(user.UserName);
         var serializedUser = JsonSerializer.Serialize(user);
         var options = new DistributedCacheEntryOptions
         {
@@ -57,7 +56,10 @@ public class UserCacheService : IUserCacheService
 
     public async Task RemoveUserAsync(string samAccountName)
     {
-        var cacheKey = $"user:{samAccountName.ToLower()}";
+        var cacheKey = GetUserCacheKey(samAccountName);
         await _cache.RemoveAsync(cacheKey);
     }
+
+    private string GetUserCacheKey(string samAccountName) =>
+        $"user:{samAccountName.ToLower()}";
 }

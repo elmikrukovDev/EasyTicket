@@ -23,93 +23,58 @@ public class LdapService : ILdapService
 
     public async Task<bool> AuthenticateAsync(LoginRequest request)
     {
-        try
+        using var connection = new LdapConnection();
+        connection.SecureSocketLayer = _settings.UseSsl;
+
+        await connection.ConnectAsync(_settings.Server, _settings.Port);
+
+        await connection.BindAsync($"{request.UserName}@{_settings.Domain}", request.Password);
+
+        if (!connection.Bound)
         {
-            using var connection = new LdapConnection();
-            connection.SecureSocketLayer = _settings.UseSsl;
-
-            await connection.ConnectAsync(_settings.Server, _settings.Port);
-
-            await connection.BindAsync($"{request.UserName}@{_settings.Domain}", request.Password);
-
-            if (!connection.Bound)
-            {
-                _logger.LogWarning("Invalid credentials for user: {Username}", request.UserName);
-                return false;
-            }
-
-            _logger.LogInformation("User {Username} successfully authenticated", request.UserName);
-            return true;
+            _logger.LogWarning("Invalid credentials for user: {Username}", request.UserName);
+            return false;
         }
-        catch (LdapException ex)
-        {
-            _logger.LogError(ex, "LDAP authentication failed for user {Username}. Error: {ErrorCode}", request.UserName, ex.ResultCode);
-            throw;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error authenticating user {Username}", request.UserName);
-            throw;
-        }
+
+        _logger.LogInformation("User {Username} successfully authenticated", request.UserName);
+        return true;
     }
 
-    public async Task<User?> GetUserAsync(LoginRequest request)
+    public async Task<User> GetUserAsync(LoginRequest request)
     {
-        try
-        {
-            using var connection = new LdapConnection();
-            connection.SecureSocketLayer = _settings.UseSsl;
+        using var connection = new LdapConnection();
+        connection.SecureSocketLayer = _settings.UseSsl;
 
-            await connection.ConnectAsync(_settings.Server, _settings.Port);
-            await connection.BindAsync($"{request.UserName}@{_settings.Domain}", request.Password);
-            return await GetUserInfoInternalAsync(request.UserName, connection);
-        }
-        catch (LdapException ex)
-        {
-            _logger.LogError(ex, "LDAP authentication failed for user {Username}. Error: {ErrorCode}", request.UserName, ex.ResultCode);
-            return null;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error authenticating user {Username}", request.UserName);
-            throw;
-        }
+        await connection.ConnectAsync(_settings.Server, _settings.Port);
+        await connection.BindAsync($"{request.UserName}@{_settings.Domain}", request.Password);
+        return await GetUserInfoInternalAsync(request.UserName, connection);
     }
 
-    private async Task<User?> GetUserInfoInternalAsync(string username, ILdapConnection connection)
+    private async Task<User> GetUserInfoInternalAsync(string username, ILdapConnection connection)
     {
         var searchFilter = $"(sAMAccountName={EscapeLdapFilter(username)})";
-        var attributes = new[] {
-            "sAMAccountName",
-            "mail",
-            "telephoneNumber",
-            "displayName",
-            "memberOf",
-            "cn",
-            "ou",
-            "title",
-            "department",
-            "sn",
-            "givenName",
-            "objectGUID",
-            "uid"
-        };
-
         var searchResults = await connection.SearchAsync(
                 _settings.SearchBase,
                 LdapConnection.ScopeSub,
                 searchFilter,
-                attributes,
+                _settings.UserInfoAttributes,
                 false
             );
 
         if (!await searchResults.HasMoreAsync())
-        {
-            return null;
-        }
+            throw new InvalidOperationException(
+                "User not found");
 
         var entry = await searchResults.NextAsync();
-        var groups = GetUserGroups(entry, connection);
+        var etGroups = GetUserGroups(entry, connection)
+            .Where(_settings.GroupRoleMapping.ContainsKey)
+            .Select(g => _settings.GroupRoleMapping[g])
+            .ToList();
+
+        if (etGroups.Count != 1)
+            throw new InvalidOperationException(
+                "Пользователь не имеет роль ET-Groups или " +
+                "имеет несколько ролей, что запрещено!");
 
         return new User
         {
@@ -117,36 +82,34 @@ public class LdapService : ILdapService
             UserName = GetAttributeValue(entry, "sAMAccountName") ?? username,
             Email = GetAttributeValue(entry, "mail"),
             DisplayName = GetAttributeValue(entry, "displayName") ??
-                         $"{GetAttributeValue(entry, "givenName")} {GetAttributeValue(entry, "sn")}".Trim(),
+                $"{GetAttributeValue(entry, "givenName")} " +
+                $"{GetAttributeValue(entry, "sn")}".Trim(),
             PhoneNumber = GetAttributeValue(entry, "telephoneNumber"),
-            Groups = groups
+            Role = etGroups.First(),
+            LoginAt = DateTime.UtcNow
         };
     }
 
     private string[] GetUserGroups(LdapEntry userEntry, ILdapConnection connection)
     {
+        var memberOf = userEntry.GetOrDefault("memberOf");
+        if (memberOf == null)
+            return [];
+        
         var groups = new List<string>();
-
-        var memberOf = userEntry.Get("memberOf");
-        if (memberOf != null)
+        foreach (string groupDn in memberOf.StringValueArray)
         {
-            foreach (string groupDn in memberOf.StringValueArray)
-            {
-                var groupName = ExtractCnFromDn(groupDn);
-                if (!string.IsNullOrEmpty(groupName))
-                {
-                    groups.Add(groupName);
-                }
-            }
+            var groupName = ExtractCnFromDn(groupDn);
+            if (!string.IsNullOrEmpty(groupName))
+                groups.Add(groupName);
         }
 
-        return groups.ToArray();
+        return [.. groups];
     }
 
-    private string GetAttributeValue(LdapEntry entry, string attributeName)
+    private string? GetAttributeValue(LdapEntry entry, string attributeName)
     {
-        var attribute = entry.Get(attributeName);
-        return attribute?.StringValue ?? string.Empty;
+        return entry.GetStringValueOrDefault(attributeName);
     }
 
     private string? ExtractCnFromDn(string dn)
@@ -157,9 +120,7 @@ public class LdapService : ILdapService
         foreach (var part in parts)
         {
             if (part.StartsWith("CN=", StringComparison.OrdinalIgnoreCase))
-            {
                 return part.Substring(3).Trim();
-            }
         }
 
         return null;
